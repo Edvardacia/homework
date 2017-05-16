@@ -1,0 +1,7 @@
+timezone <- c("02/01/2013", "03/01/2013", "04/01/2013", "06/01/2013", "05/01/2013")
+EndId <- c(251, 255, 259, 267, 270)
+EndGI <- c(17, 18, 22, 29, 33)
+S <- data.frame(timezone, EndId, EndGI)
+S$timezone <- as.Date(S$timezone, '%m/%d/%Y' );
+
+S1 <- S[S$timezone >= as.Date('2013-03-01') & S$timezone <= as.Date('2013-05-01'),];
