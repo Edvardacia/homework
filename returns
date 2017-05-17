@@ -1,0 +1,50 @@
+# Пакеты
+library("TTR")
+library("plotly")
+
+
+# Загрузил данные
+SI <- read.csv(file = "D:\\data\\SPFB.Si5.csv", header = TRUE, sep = ";")
+# Работа со временем
+SI$X.DATE. <- as.Date(SI$X.DATE., '%Y%m%d' );
+min_date <- min(SI$X.DATE.)
+max_date <- max(SI$X.DATE.)
+SI_part1 <- SI[SI$X.DATE. >= min_date & SI$X.DATE. <= (min_date+60),];
+#Создаю data с конкретным stat
+SI_part1_stat_3bet <- data.frame(SI_part1$X.DATE., SI_part1$X.CLOSE.)
+
+#Проверка на N.A.
+SI_part1_stat_3bet <- SI_part1_stat_3bet[complete.cases(SI_part1_stat_3bet),]
+
+# Создам пустой массив для отклонений
+SI_part1_stat_3bet_ret <- rep(0, (dim(SI_part1_stat_3bet)[1]))
+
+# Считаю отклонения
+for (i in seq(2, dim(SI_part1_stat_3bet)[1], by = 1)) {
+  SI_part1_stat_3bet_ret[i] <- SI_part1_stat_3bet$SI_part1.X.CLOSE.[i] - SI_part1_stat_3bet$SI_part1.X.CLOSE.[i-1]
+  }
+
+SI_part1_stat_3bet$returns <- c(SI_part1_stat_3bet_ret)
+
+# Привожу к абсолютным числам
+SI_part1_stat_3bet$abs <- abs(SI_part1_stat_3bet$returns)
+
+# Считаю скользяющую среднюю 
+SI_part1_stat_3bet$SMA <- SMA(SI_part1_stat_3bet$abs, 50)
+SI_part1_stat_3bet$SMA <- round(SI_part1_stat_3bet$SMA, digits = 0)
+
+# Считаю среднеквадратичное отклонение 
+SI_part1_stat_3bet$SD <- runSD(SI_part1_stat_3bet$SMA, 50)
+
+# Считаю сигмы 
+SI_part1_stat_3bet$Q3Sigma1 <- SI_part1_stat_3bet$SMA - 3*(SI_part1_stat_3bet$SD)
+SI_part1_stat_3bet$Q3Sigma2 <- SI_part1_stat_3bet$SMA + 3*(SI_part1_stat_3bet$SD)
+
+## Выводим график
+SI_part1_plotly <- plot_ly(SI_part1_stat_3bet, x = SI_part1_stat_3bet$SI_part1.X.DATE., y = SI_part1_stat_3bet$returns, name = 'Returns', type = 'scatter', mode = 'lines+markers') %>%
+  add_trace(y = SI_part1_stat_3bet$SMA, name = 'ShortTermSMA', mode = 'lines') %>%
+  add_trace(y = SI_part1_stat_3bet$Q3Sigma1, name = '3QSigma', mode = 'lines') %>%
+  add_trace(y = SI_part1_stat_3bet$Q3Sigma2, name = '3QSigma', mode = 'lines')
+
+
+SI_part1_plotly
